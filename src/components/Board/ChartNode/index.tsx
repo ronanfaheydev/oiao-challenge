@@ -11,14 +11,14 @@ import { useGetSeriesObservationsMulti } from "../../../queries";
 import ErrorBoundary from "../../ErrorBoundary";
 import { Chart, type ChartSeries, type DateRange } from "./Chart";
 import { chartHeaderHeight, chartHeight, chartWidth } from "./constants";
-import { formatObservationDate, getColor } from "./helpers";
+import { formatObservationDate } from "./helpers";
 import { ResizeIcon } from "./ResizeIcon";
 
 interface ChartNodeProps {
 	id: string;
 	selected?: boolean;
-	width: number;
-	height: number;
+	width?: number;
+	height?: number;
 }
 
 interface NodeData extends Node {
@@ -27,6 +27,7 @@ interface NodeData extends Node {
 			id: string;
 			title: string;
 			units_short: string;
+			color: string;
 		};
 	};
 }
@@ -49,8 +50,8 @@ const controlStyle = {
 
 const ChartNodeContainer = styled.div<{
 	$isSelected: boolean;
-	$height: number;
-	$width: number;
+	$height?: number;
+	$width?: number;
 }>`
 	background-color: white;
 	border: 1px solid lightgray;
@@ -59,17 +60,17 @@ const ChartNodeContainer = styled.div<{
 	outline-offset: 2px;
 	${({ $isSelected }) => $isSelected && "outline: 2px solid #ff0071;"}
 	position: relative;
-	height: ${({ $height }) => $height}px;
-	width: ${({ $width }) => $width}px;
+	min-height: ${({ $height }) => $height}px;
+	min-width: ${({ $width }) => $width}px;
 	min-width: ${chartWidth}px;
 	min-height: ${chartHeight + chartHeaderHeight}px;
 `;
 
 const StyledHandle = styled(Handle)<{ $hasConnection: boolean }>`
 	background-color: ${({ $hasConnection }) =>
-		$hasConnection ? "green" : "white"};
+		$hasConnection ? "#ffa705" : "white"};
 	border: 2px solid
-		${({ $hasConnection }) => ($hasConnection ? "green" : "lightgray")};
+		${({ $hasConnection }) => ($hasConnection ? "#ffa705" : "lightgray")};
 	border-radius: 5px;
 	z-index: 110000;
 
@@ -132,8 +133,10 @@ const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 				return {
 					data,
 					name: `${serie.title} - ${serie.units_short}`,
-					type: "line",
-					color: getColor(serie.id),
+					chartType: serie.chartType,
+					lineStyle: serie.lineStyle,
+					barStyle: serie.barStyle,
+					color: serie.color,
 					min: Math.min(...values),
 					max: Math.max(...values),
 					minDate: Math.min(...dates),

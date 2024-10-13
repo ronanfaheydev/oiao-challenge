@@ -8,6 +8,6 @@ export const DATA_NODE = "data-node";
 export type NodeType = typeof CHART_NODE | typeof DATA_NODE;
 
 export const nodeTypes: NodeTypes = {
-	"data-node": DataNode,
-	"chart-node": ChartNode,
+	[DATA_NODE]: DataNode,
+	[CHART_NODE]: ChartNode,
 };
