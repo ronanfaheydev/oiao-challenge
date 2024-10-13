@@ -36,6 +36,9 @@ export interface ChartSeries {
 	max: number;
 	minDate: number;
 	maxDate: number;
+	chartType: "line" | "bar";
+	lineStyle: "solid" | "dotted" | "dashed";
+	barStyle: "solid" | "outlined";
 }
 export type DateRange = {
 	datestart: number;

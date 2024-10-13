@@ -288,7 +288,7 @@ function DataSourceNode({ id }: DataSourceNodeProps) {
 										</FormHelperText>
 									</>
 								)}
-								onChange={(_, value) => {
+								onChange={(_, value: any) => {
 									onChange(value);
 								}}
 							/>

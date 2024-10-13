@@ -28,6 +28,9 @@ interface NodeData extends Node {
 			title: string;
 			units_short: string;
 			color: string;
+			chartType: string;
+			lineStyle: string;
+			barStyle: string;
 		};
 	};
 }
@@ -133,9 +136,10 @@ const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 				return {
 					data,
 					name: `${serie.title} - ${serie.units_short}`,
-					chartType: serie.chartType,
-					lineStyle: serie.lineStyle,
-					barStyle: serie.barStyle,
+					chartType: (serie.chartType as "line" | "bar") || "line",
+					lineStyle:
+						(serie.lineStyle as "solid" | "dotted" | "dashed") || "solid",
+					barStyle: (serie.barStyle as "solid" | "outlined") || "solid",
 					color: serie.color,
 					min: Math.min(...values),
 					max: Math.max(...values),
