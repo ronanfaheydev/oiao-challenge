@@ -14,10 +14,17 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo } from "react";
+import styled from "styled-components";
 import "./Board.scss";
 import BoardContext from "./context";
 import { initialEdges, initialNodes } from "./init-nodes";
 import { nodeTypes } from "./nodeTypes";
+import { useIsMobile } from "./useIsMobile";
+
+const BoardContainer = styled.div`
+	height: 100vh;
+	width: 100vw;
+`;
 
 function Board() {
 	const { fitView } = useReactFlow();
@@ -103,9 +110,15 @@ function Board() {
 		[updateNode]
 	);
 
+	const isMobile = useIsMobile();
+
+	useEffect(() => {
+		fitView();
+	}, [fitView]);
+
 	return (
 		<BoardContext.Provider value={boardCtx}>
-			<div style={{ height: "100vh", width: "100vw" }}>
+			<BoardContainer>
 				<ReactFlow
 					nodes={nodes}
 					onNodesChange={onNodesChange}
@@ -116,7 +129,9 @@ function Board() {
 					nodeTypes={nodeTypes}
 				>
 					<Panel position="top-right">
-						<button onClick={onReset}>Reset</button>
+						<Button color="error" onClick={onReset}>
+							Reset
+						</Button>
 					</Panel>
 					<Panel position="top-left">
 						<Button onClick={() => addNode("chart")}>Add Chart</Button>
@@ -126,9 +141,9 @@ function Board() {
 					</Panel>
 					<Background />
 					<Controls />
-					<MiniMap />
+					{!isMobile && <MiniMap />}
 				</ReactFlow>
-			</div>
+			</BoardContainer>
 		</BoardContext.Provider>
 	);
 }

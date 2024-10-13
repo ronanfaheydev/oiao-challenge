@@ -1,24 +1,66 @@
-import { Handle, Position, useReactFlow } from "@xyflow/react";
+import {
+	Handle,
+	NodeResizeControl,
+	Panel,
+	Position,
+	useReactFlow,
+} from "@xyflow/react";
 import { useCallback, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useGetSeriesObservationsMulti } from "../../../queries";
 import ErrorBoundary from "../../ErrorBoundary";
 import { Chart, type ChartSeries, type DateRange } from "./Chart";
-import { chartHeight, chartWidth } from "./constants";
+import { chartHeaderHeight, chartHeight, chartWidth } from "./constants";
+
+function ResizeIcon() {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="20"
+			height="20"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="#ff0071"
+			fill="none"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			style={{ position: "absolute", right: 5, bottom: 5 }}
+		>
+			<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+			<polyline points="16 20 20 20 20 16" />
+			<line x1="14" y1="14" x2="20" y2="20" />
+			<polyline points="8 4 4 4 4 8" />
+			<line x1="4" y1="4" x2="10" y2="10" />
+		</svg>
+	);
+}
 
 const formatObservationDate = (date: number) => {
 	// yyyy-mm-dd
 	return new Date(date).toISOString().split("T")[0];
 };
 
-const ChartNodeContainer = styled.div`
+const controlStyle = {
+	background: "transparent",
+	border: "none",
+};
+
+const ChartNodeContainer = styled.div<{
+	$isSelected: boolean;
+	$height: number;
+	$width: number;
+}>`
 	background-color: white;
-	border: 1px solid #ccc;
+	border: 1px solid lightgray;
 	border-radius: 5px;
 	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
-	padding: 10px;
+	outline-offset: 2px;
+	${({ $isSelected }) => $isSelected && "outline: 2px solid #ff0071;"}
+	position: relative;
+	height: ${({ $height }) => $height}px;
+	width: ${({ $width }) => $width}px;
 	min-width: ${chartWidth}px;
-	min-height: ${chartHeight}px;
+	min-height: ${chartHeight + chartHeaderHeight}px;
 `;
 
 const StyledHandle = styled(Handle)<{ hasConnection: boolean }>`
@@ -30,6 +72,7 @@ const StyledHandle = styled(Handle)<{ hasConnection: boolean }>`
 	width: 10px;
 	height: 20px;
 	margin: auto;
+	z-index: 110000;
 `;
 
 // generate hex colors from the series id
@@ -55,6 +98,7 @@ const getColor = (series_id: string) => {
 
 interface ChartNodeProps {
 	id: string;
+	selected: boolean;
 }
 
 interface NodeData extends Node {
@@ -78,7 +122,7 @@ interface SeriesDataObservations {
 	error: Error;
 }
 
-const ChartNode = ({ id, ...rest }: ChartNodeProps) => {
+const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 	const { getEdges, getNode } = useReactFlow();
 
 	// Get all edges connected to this node
@@ -147,19 +191,37 @@ const ChartNode = ({ id, ...rest }: ChartNodeProps) => {
 	}
 
 	return (
-		<ChartNodeContainer>
+		<>
 			<StyledHandle
 				type="target"
 				position={Position.Left}
 				hasConnection={!!incomingNodes.length}
 			/>
-			<Chart
-				data={formattedData}
-				isLoading={seriesLoading}
-				onDateChange={onDateChange}
-				id={id}
-			/>
-		</ChartNodeContainer>
+			<ChartNodeContainer
+				$isSelected={selected}
+				data-testid="chart-node"
+				$height={height}
+				$width={width}
+			>
+				<Chart
+					data={formattedData}
+					isLoading={seriesLoading}
+					onDateChange={onDateChange}
+					id={id}
+				/>
+				<Panel position="bottom-right">
+					{selected && (
+						<NodeResizeControl
+							style={controlStyle}
+							minWidth={chartWidth}
+							minHeight={chartHeight}
+						>
+							<ResizeIcon />
+						</NodeResizeControl>
+					)}
+				</Panel>
+			</ChartNodeContainer>
+		</>
 	);
 };
 

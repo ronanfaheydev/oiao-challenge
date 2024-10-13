@@ -9,12 +9,14 @@ export const initialNodes: Node[] = [
 			title: "Connect a data category to begin",
 		},
 		position: { x: 500, y: 5 },
+		height: 400,
+		width: 800,
 	},
 	{
 		type: "data-category",
 		id: "data-category-1",
 		data: {},
-		position: { x: 100, y: 100 },
+		position: { x: 50, y: 10 },
 	},
 ];
 

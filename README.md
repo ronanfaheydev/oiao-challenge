@@ -46,3 +46,5 @@ Data is fetched with tanstack query
 - Endpoints created with https://orval.dev/playground
 - Proxy requests using https://www.npmjs.com/package/local-cors-proxy
 - Thought about using zustand for node state, not necessary for this project I would say
+- I need to set up the API on an external server if I want to use on mobile to test
+  - Using GCP

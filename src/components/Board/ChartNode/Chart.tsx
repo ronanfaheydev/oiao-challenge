@@ -1,4 +1,6 @@
 import {
+	Card,
+	CardContent,
 	CircularProgress,
 	FormControl,
 	FormControlLabel,
@@ -15,12 +17,13 @@ import {
 	Legend,
 	Line,
 	LineChart,
+	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
 import styled from "styled-components";
-import { chartHeight, chartWidth } from "./constants";
+import { chartHeaderHeight, chartHeight, chartWidth } from "./constants";
 
 export interface ChartSeries {
 	name: string;
@@ -49,7 +52,7 @@ const lineChartProps = {
 	bottom: 5,
 };
 
-const ChartContainer = styled.div`
+const ChartContainer = styled(Card)`
 	width: 100%;
 	height: 100%;
 	position: relative;
@@ -72,6 +75,20 @@ const TooltipContainer = styled.div`
 	border-radius: 5px;
 `;
 
+const ChartHeader = styled.div`
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	height: ${chartHeaderHeight}px;
+`;
+
+const ChartContent = styled(CardContent)`
+	height: calc(100% - ${chartHeaderHeight}px);
+	min-height: ${chartHeight}px;
+	min-width: ${chartWidth}px;
+	padding: 0;
+`;
+
 export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 	const _minDate = useMemo(
 		() => data.length && Math.min(...data.map((s) => s.minDate)),
@@ -85,8 +102,6 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 		datestart: _minDate,
 		dateend: _maxDate,
 	});
-
-	console.log(_maxDate, _minDate);
 
 	useEffect(() => {
 		if (_minDate && _maxDate) {
@@ -118,16 +133,25 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 		[chartType]
 	);
 
-	console.log(data);
-
 	return (
-		<ChartContainer>
+		<ChartContainer data-testid="chart-container">
 			{isLoading && (
 				<Loading>
 					<CircularProgress />
 				</Loading>
 			)}
-			<div>
+			<ChartHeader>
+				<FormControl>
+					<RadioGroup
+						onChange={onChartTypeChange}
+						row
+						defaultValue="line"
+						name="chart-type"
+					>
+						<FormControlLabel value="line" control={<Radio />} label="line" />
+						<FormControlLabel value="bar" control={<Radio />} label="bar" />
+					</RadioGroup>
+				</FormControl>
 				<StyledFormGroup row>
 					<TextField
 						id={`${id}-datestart`}
@@ -146,102 +170,92 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 						onChange={_onDateChange}
 					/>
 				</StyledFormGroup>
-			</div>
-			<div>
-				<FormControl>
-					<RadioGroup
-						onChange={onChartTypeChange}
-						row
-						defaultValue="line"
-						name="chart-type"
-					>
-						<FormControlLabel value="line" control={<Radio />} label="line" />
-						<FormControlLabel value="bar" control={<Radio />} label="bar" />
-					</RadioGroup>
-				</FormControl>
-			</div>
-			<div>
-				<ChartComponent
-					width={chartWidth}
-					height={chartHeight}
-					margin={lineChartProps}
-					data={data}
+			</ChartHeader>
+
+			<ChartContent>
+				<ResponsiveContainer
+					width="100%"
+					height="100%"
+					minHeight={chartHeight}
+					minWidth={chartWidth}
 				>
-					<CartesianGrid strokeDasharray="3 3" />
-					<XAxis
-						scale="time"
-						type="number"
-						tickFormatter={(tick) => {
-							const date = new Date(tick);
-							return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-						}}
-						dataKey="x"
-						domain={[_minDate, _maxDate]}
-						allowDuplicatedCategory={false}
-					/>
-					<Tooltip
-						labelFormatter={(label) => {
-							const date = new Date(label);
-							return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-						}}
-						content={(props) => {
-							const { payload } = props;
-							if (payload?.length) {
-								const date = new Date(payload[0].payload.x);
-								return (
-									<TooltipContainer>
-										<small>{`${date.toISOString().split("T")[0]}`}</small>
-										{payload.map((p, i) => (
-											<div
-												key={i}
-												style={{ color: p.color }}
-											>{`${p.payload.seriesId}: ${Number(p.value).toFixed(2)}`}</div>
-										))}
-									</TooltipContainer>
-								);
-							}
-							return null;
-						}}
-						cursor={{ strokeDasharray: "3 3" }}
-					/>
-					<Legend />
+					<ChartComponent margin={lineChartProps} data={data}>
+						<CartesianGrid strokeDasharray="3 3" />
+						<XAxis
+							scale="time"
+							type="number"
+							tickFormatter={(tick) => {
+								const date = new Date(tick);
+								return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+							}}
+							dataKey="x"
+							domain={[_minDate, _maxDate]}
+							allowDuplicatedCategory={false}
+						/>
+						<Tooltip
+							labelFormatter={(label) => {
+								const date = new Date(label);
+								return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+							}}
+							content={(props) => {
+								const { payload } = props;
+								if (payload?.length) {
+									const date = new Date(payload[0].payload.x);
+									return (
+										<TooltipContainer>
+											<small>{`${date.toISOString().split("T")[0]}`}</small>
+											{payload.map((p, i) => (
+												<div
+													key={i}
+													style={{ color: p.color }}
+												>{`${p.payload.seriesId}: ${Number(p.value).toFixed(2)}`}</div>
+											))}
+										</TooltipContainer>
+									);
+								}
+								return null;
+							}}
+							cursor={{ strokeDasharray: "3 3" }}
+						/>
+						<Legend />
 
-					{data?.map((s, i) => (
-						<>
-							<YAxis
-								key={`yAxis-${s.name}-${id}`}
-								dataKey="y"
-								yAxisId={`yaxis-${s.name}`}
-								domain={[s.min, s.max]}
-								orientation={i % 2 === 0 ? "left" : "right"}
-							/>
+						{data?.map((s, i) => (
+							<>
+								<YAxis
+									key={`yAxis-${s.name}-${id}`}
+									dataKey="y"
+									yAxisId={`yaxis-${s.name}`}
+									domain={[s.min, s.max]}
+									orientation={i % 2 === 0 ? "left" : "right"}
+								/>
 
-							{chartType === "line" ? (
-								<Line
-									key={`line-${s.name}-${id}`}
-									type="monotone"
-									dataKey="y"
-									name={s.name}
-									stroke={s.color}
-									fill={s.color}
-									data={s.data}
-									yAxisId={`yaxis-${s.name}`}
-									dot={false}
-								/>
-							) : (
-								<Bar
-									key={`bar-${s.name}-${id}`}
-									dataKey="y"
-									name={s.name}
-									fill={s.color}
-									data={s.data}
-									yAxisId={`yaxis-${s.name}`}
-								/>
-							)}
-						</>
-					))}
-				</ChartComponent>
-			</div>
+								{chartType === "line" ? (
+									<Line
+										key={`line-${s.name}-${id}`}
+										type="monotone"
+										dataKey="y"
+										name={s.name}
+										stroke={s.color}
+										fill={s.color}
+										data={s.data}
+										yAxisId={`yaxis-${s.name}`}
+										dot={false}
+									/>
+								) : (
+									<Bar
+										key={`bar-${s.name}-${id}`}
+										dataKey="y"
+										name={s.name}
+										fill={s.color}
+										data={s.data}
+										yAxisId={`yaxis-${s.name}`}
+									/>
+								)}
+							</>
+						))}
+					</ChartComponent>
+				</ResponsiveContainer>
+			</ChartContent>
 		</ChartContainer>
 	);
 };
