@@ -32,6 +32,15 @@ const StyledCard = styled(Card)`
 	}
 `;
 
+const StyledHandle = styled(Handle)<{ isOn: boolean }>`
+	background-color: ${({ isOn }) => (isOn ? "green" : "white")};
+	border: 2px solid ${({ isOn }) => (isOn ? "green" : "lightgray")};
+	border-radius: 5px;
+	width: 10px;
+	height: 20px;
+	margin: auto;
+`;
+
 interface DataSourceNodeProps {
 	id: string;
 }
@@ -77,7 +86,12 @@ function DataSourceNode({ id }: DataSourceNodeProps) {
 
 	return (
 		<>
-			{selectedSeries && <Handle type="source" position={Position.Right} />}
+			<StyledHandle
+				type="source"
+				position={Position.Right}
+				isOn={!!selectedSeries}
+				isConnectable={!!selectedSeries}
+			/>
 			<StyledCard>
 				<CardHeader
 					title={selectedSeries ? <>{selectedSeries.id}</> : "New data source"}

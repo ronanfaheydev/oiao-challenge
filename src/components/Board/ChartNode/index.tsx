@@ -21,6 +21,17 @@ const ChartNodeContainer = styled.div`
 	min-height: ${chartHeight}px;
 `;
 
+const StyledHandle = styled(Handle)<{ hasConnection: boolean }>`
+	background-color: ${({ hasConnection }) =>
+		hasConnection ? "green" : "white"};
+	border: 2px solid
+		${({ hasConnection }) => (hasConnection ? "green" : "lightgray")};
+	border-radius: 5px;
+	width: 10px;
+	height: 20px;
+	margin: auto;
+`;
+
 // generate hex colors from the series id
 const generateColor = (series_id: string) => {
 	const color = `${series_id}666666`
@@ -67,7 +78,7 @@ interface SeriesDataObservations {
 	error: Error;
 }
 
-const ChartNode = ({ id }: ChartNodeProps) => {
+const ChartNode = ({ id, ...rest }: ChartNodeProps) => {
 	const { getEdges, getNode } = useReactFlow();
 
 	// Get all edges connected to this node
@@ -81,15 +92,14 @@ const ChartNode = ({ id }: ChartNodeProps) => {
 	// Get connected nodes based on incoming and outgoing edges
 	const incomingNodes = incomingEdges
 		.map((edge) => getNode(edge.source) as unknown as NodeData)
-		.filter(Boolean);
+		.filter(Boolean)
+		.filter((node) => node.data.series);
 
 	const [searchDates, setSearchDates] = useState<DateRange | null>(null);
 
 	const onDateChange = useCallback((dates: DateRange) => {
 		setSearchDates(dates);
 	}, []);
-
-	console.log(searchDates);
 
 	const seriesData = useGetSeriesObservationsMulti(
 		{
@@ -110,6 +120,7 @@ const ChartNode = ({ id }: ChartNodeProps) => {
 					series?.data?.observations?.map((observation: any) => ({
 						x: +new Date(observation.date),
 						y: Number(observation.value),
+						seriesId: serie.id,
 					})) || [];
 				const values = data.map((d) => d.y);
 				const dates = data.map((d) => d.x);
@@ -137,7 +148,11 @@ const ChartNode = ({ id }: ChartNodeProps) => {
 
 	return (
 		<ChartNodeContainer>
-			<Handle type="target" position={Position.Left} />
+			<StyledHandle
+				type="target"
+				position={Position.Left}
+				hasConnection={!!incomingNodes.length}
+			/>
 			<Chart
 				data={formattedData}
 				isLoading={seriesLoading}

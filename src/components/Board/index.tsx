@@ -11,57 +11,13 @@ import {
 	useNodesState,
 	useReactFlow,
 	type Connection,
-	type Edge,
-	type Node,
-	type ResizeParamsWithDirection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { stratify, tree } from "d3-hierarchy";
 import { useCallback, useEffect, useMemo } from "react";
 import "./Board.scss";
 import BoardContext from "./context";
+import { initialEdges, initialNodes } from "./init-nodes";
 import { nodeTypes } from "./nodeTypes";
-
-const g = tree();
-
-const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-	if (nodes.length === 0) return { nodes, edges };
-
-	const { width, height } = document
-		.querySelector(`[data-id="${nodes[0].id}"]`)
-		.getBoundingClientRect();
-	const hierarchy = stratify()
-		.id((node) => node.id)
-		.parentId((node) => edges.find((edge) => edge.target === node.id)?.source);
-	const root = hierarchy(nodes);
-	const layout = g.nodeSize([width * 2, height * 2])(root);
-
-	return {
-		nodes: layout
-			.descendants()
-			.map((node) => ({ ...node.data, position: { x: node.x, y: node.y } })),
-		edges,
-	};
-};
-
-const initialNodes: any = [
-	{
-		type: "chart",
-		id: "chart-1",
-		data: {
-			chartType: "line",
-		},
-		position: { x: 500, y: 5 },
-	},
-	{
-		type: "data-category",
-		id: "data-category-1",
-		data: { isReady: false },
-		position: { x: 100, y: 100 },
-	},
-];
-
-const initialEdges: any = [];
 
 function Board() {
 	const { fitView } = useReactFlow();
@@ -71,30 +27,14 @@ function Board() {
 	const onReset = useCallback(() => {
 		setNodes(initialNodes);
 		setEdges(initialEdges);
+		fitView();
 	}, [setNodes, setEdges]);
-
-	const onLayout = useCallback(
-		(direction: ResizeParamsWithDirection) => {
-			const { nodes: layoutedNodes, edges: layoutedEdges } =
-				getLayoutedElements(nodes, edges, {
-					direction: direction || "LR",
-				});
-
-			setNodes([...layoutedNodes]);
-			setEdges([...layoutedEdges]);
-
-			window.requestAnimationFrame(() => {
-				fitView();
-			});
-		},
-		[nodes, edges]
-	);
 
 	const onConnect = useCallback(
 		(params: Connection) => {
 			setEdges((eds) => addEdge(params, eds));
 		},
-		[setEdges, fitView]
+		[setEdges]
 	);
 	// Force update nodes or re-render to ensure the layout updates after a connection
 	useEffect(() => {
@@ -107,32 +47,55 @@ function Board() {
 	}, [edges]);
 
 	const addNode = useCallback(
-		(type?: string) => {
-			setNodes((nds) => [
-				...nds,
-				{
-					id: (nds.length + 1).toString(),
-					data: { isReady: false },
-					position: { x: 100, y: nds.length * 100 },
-					type: type || "data-category",
-				},
-			]);
-			fitView();
-		},
-		[setNodes, fitView]
-	);
-
-	const updateNode = useCallback(
-		(id, data) => {
+		(type: string) => {
 			setNodes((nds) => {
-				const node = nds.find((node) => node.id === id);
-				node.data = { ...node?.data, ...data };
-				return [...nds];
+				const nodesOfType = nds.filter((node) => node.type === type);
+				const maxYNode = nodesOfType.reduce((max, node) => {
+					return node.position.y > max.position.y ? node : max;
+				}, nodesOfType[0]);
+
+				return [
+					...nds,
+					{
+						id: `${type}-${nodesOfType.length + 1}`,
+						data: { isReady: false },
+						position: {
+							x: maxYNode.position.x,
+							y: maxYNode.position.y + (maxYNode.measured?.height || 0) + 20,
+						},
+						type: type,
+					},
+				];
 			});
 		},
 		[setNodes]
 	);
 
+	const updateNode = useCallback(
+		(id: string, data: any) => {
+			setNodes((nds) => {
+				const node = nds.find((node) => node.id === id);
+				if (node) {
+					const _node = {
+						...node,
+						data: { ...node.data, ...data },
+					};
+					// force update all nodes to re-render
+					return [
+						...nds
+							.filter((node) => node.id !== id)
+							.map((node) => ({ ...node })),
+						_node,
+					];
+				}
+
+				return nds;
+			});
+		},
+		[setNodes]
+	);
+
+	// hook to allow nodes to be updated from the component
 	const boardCtx = useMemo(
 		() => ({
 			updateNode: updateNode,
@@ -151,13 +114,11 @@ function Board() {
 					onConnect={onConnect}
 					fitView
 					nodeTypes={nodeTypes}
-					// onClick={canAddNode ? addNode : undefined}
 				>
 					<Panel position="top-right">
 						<button onClick={onReset}>Reset</button>
 					</Panel>
 					<Panel position="top-left">
-						{/* <button onClick={onLayout}>Reset layout</button> */}
 						<Button onClick={() => addNode("chart")}>Add Chart</Button>
 						<Button onClick={() => addNode("data-category")}>
 							Add Data Category

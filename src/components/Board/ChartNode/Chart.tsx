@@ -1,6 +1,16 @@
-import { CircularProgress, FormGroup, TextField } from "@mui/material";
+import {
+	CircularProgress,
+	FormControl,
+	FormControlLabel,
+	FormGroup,
+	Radio,
+	RadioGroup,
+	TextField,
+} from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+	Bar,
+	BarChart,
 	CartesianGrid,
 	Legend,
 	Line,
@@ -14,7 +24,7 @@ import { chartHeight, chartWidth } from "./constants";
 
 export interface ChartSeries {
 	name: string;
-	data: { y: number; x: number }[];
+	data: { y: number; x: number; seriesId: string }[];
 	color: string;
 	min: number;
 	max: number;
@@ -55,10 +65,16 @@ const StyledFormGroup = styled(FormGroup)`
 	padding: 5px;
 	gap: 10px;
 `;
+const TooltipContainer = styled.div`
+	background-color: white;
+	border: 1px solid lightgray;
+	padding: 5px;
+	border-radius: 5px;
+`;
 
 export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 	const _minDate = useMemo(
-		() => data.length && Math.min(0, ...data.map((s) => s.minDate)),
+		() => data.length && Math.min(...data.map((s) => s.minDate)),
 		[data]
 	);
 	const _maxDate = useMemo(
@@ -70,6 +86,8 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 		dateend: _maxDate,
 	});
 
+	console.log(_maxDate, _minDate);
+
 	useEffect(() => {
 		if (_minDate && _maxDate) {
 			setDates({ datestart: _minDate, dateend: _maxDate });
@@ -80,12 +98,27 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			const date = new Date(e.target.value).getTime();
 			let _dates = { ...dates, [e.target.name]: date };
-			console.log(dates, _dates);
 			setDates(_dates);
 			onDateChange(_dates);
 		},
 		[dates, onDateChange]
 	);
+
+	const [chartType, setChartType] = useState<"line" | "bar">("line");
+
+	const onChartTypeChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			setChartType(e.target.value as "line" | "bar");
+		},
+		[]
+	);
+
+	const ChartComponent = useMemo(
+		() => (chartType === "line" ? LineChart : BarChart),
+		[chartType]
+	);
+
+	console.log(data);
 
 	return (
 		<ChartContainer>
@@ -115,10 +148,24 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 				</StyledFormGroup>
 			</div>
 			<div>
-				<LineChart
+				<FormControl>
+					<RadioGroup
+						onChange={onChartTypeChange}
+						row
+						defaultValue="line"
+						name="chart-type"
+					>
+						<FormControlLabel value="line" control={<Radio />} label="line" />
+						<FormControlLabel value="bar" control={<Radio />} label="bar" />
+					</RadioGroup>
+				</FormControl>
+			</div>
+			<div>
+				<ChartComponent
 					width={chartWidth}
 					height={chartHeight}
 					margin={lineChartProps}
+					data={data}
 				>
 					<CartesianGrid strokeDasharray="3 3" />
 					<XAxis
@@ -137,31 +184,63 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 							const date = new Date(label);
 							return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 						}}
+						content={(props) => {
+							const { payload } = props;
+							if (payload?.length) {
+								const date = new Date(payload[0].payload.x);
+								return (
+									<TooltipContainer>
+										<small>{`${date.toISOString().split("T")[0]}`}</small>
+										{payload.map((p, i) => (
+											<div
+												key={i}
+												style={{ color: p.color }}
+											>{`${p.payload.seriesId}: ${Number(p.value).toFixed(2)}`}</div>
+										))}
+									</TooltipContainer>
+								);
+							}
+							return null;
+						}}
 						cursor={{ strokeDasharray: "3 3" }}
 					/>
 					<Legend />
 
 					{data?.map((s, i) => (
 						<>
-							<Line
-								key={s.name}
-								type="monotone"
-								dataKey="y"
-								name={s.name}
-								stroke={s.color}
-								data={s.data}
-								yAxisId={s.name}
-								dot={false}
-							/>
 							<YAxis
+								key={`yAxis-${s.name}-${id}`}
 								dataKey="y"
-								yAxisId={s.name}
+								yAxisId={`yaxis-${s.name}`}
 								domain={[s.min, s.max]}
 								orientation={i % 2 === 0 ? "left" : "right"}
 							/>
+
+							{chartType === "line" ? (
+								<Line
+									key={`line-${s.name}-${id}`}
+									type="monotone"
+									dataKey="y"
+									name={s.name}
+									stroke={s.color}
+									fill={s.color}
+									data={s.data}
+									yAxisId={`yaxis-${s.name}`}
+									dot={false}
+								/>
+							) : (
+								<Bar
+									key={`bar-${s.name}-${id}`}
+									dataKey="y"
+									name={s.name}
+									fill={s.color}
+									data={s.data}
+									yAxisId={`yaxis-${s.name}`}
+								/>
+							)}
 						</>
 					))}
-				</LineChart>
+				</ChartComponent>
 			</div>
 		</ChartContainer>
 	);

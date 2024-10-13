@@ -45,3 +45,4 @@ Data is fetched with tanstack query
 - OpenAPI schema found here https://github.com/armanobosyan/FRED-OpenAPI-specification
 - Endpoints created with https://orval.dev/playground
 - Proxy requests using https://www.npmjs.com/package/local-cors-proxy
+- Thought about using zustand for node state, not necessary for this project I would say
