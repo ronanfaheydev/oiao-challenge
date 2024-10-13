@@ -79,7 +79,16 @@ const ChartHeader = styled.div`
 	display: flex;
 	justify-content: space-around;
 	align-items: center;
+	flex-direction: column;
 	height: ${chartHeaderHeight}px;
+	padding: 5px 10px;
+`;
+
+const ChartInputs = styled.div`
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	width: 100%;
 `;
 
 const ChartContent = styled(CardContent)`
@@ -141,35 +150,44 @@ export const Chart = ({ data, id, isLoading, onDateChange }: ChartProps) => {
 				</Loading>
 			)}
 			<ChartHeader>
-				<FormControl>
-					<RadioGroup
-						onChange={onChartTypeChange}
-						row
-						defaultValue="line"
-						name="chart-type"
-					>
-						<FormControlLabel value="line" control={<Radio />} label="line" />
-						<FormControlLabel value="bar" control={<Radio />} label="bar" />
-					</RadioGroup>
-				</FormControl>
-				<StyledFormGroup row>
-					<TextField
-						id={`${id}-datestart`}
-						name="datestart"
-						type="date"
-						helperText="Start Date"
-						value={new Date(dates.datestart).toISOString().split("T")[0]}
-						onChange={_onDateChange}
-					/>
-					<TextField
-						id={`${id}-dateend`}
-						name="dateend"
-						type="date"
-						helperText="End Date"
-						value={new Date(dates.dateend).toISOString().split("T")[0]}
-						onChange={_onDateChange}
-					/>
-				</StyledFormGroup>
+				<TextField
+					name="chart_title"
+					defaultValue="New Chart"
+					fullWidth
+					label="Title"
+				/>
+
+				<ChartInputs>
+					<FormControl>
+						<RadioGroup
+							onChange={onChartTypeChange}
+							row
+							defaultValue="line"
+							name="chart-type"
+						>
+							<FormControlLabel value="line" control={<Radio />} label="line" />
+							<FormControlLabel value="bar" control={<Radio />} label="bar" />
+						</RadioGroup>
+					</FormControl>
+					<StyledFormGroup row>
+						<TextField
+							id={`${id}-datestart`}
+							name="datestart"
+							type="date"
+							helperText="Start Date"
+							value={new Date(dates.datestart).toISOString().split("T")[0]}
+							onChange={_onDateChange}
+						/>
+						<TextField
+							id={`${id}-dateend`}
+							name="dateend"
+							type="date"
+							helperText="End Date"
+							value={new Date(dates.dateend).toISOString().split("T")[0]}
+							onChange={_onDateChange}
+						/>
+					</StyledFormGroup>
+				</ChartInputs>
 			</ChartHeader>
 
 			<ChartContent>
