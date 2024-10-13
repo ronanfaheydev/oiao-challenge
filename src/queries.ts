@@ -159,10 +159,21 @@ export interface SeriesSearchData {
 	units_short: string;
 }
 
+interface SeriesSearchResponse {
+	count: number;
+	limit: number;
+	offset: number;
+	order_by: string;
+	realtime_end: string;
+	realtime_start: string;
+	seriess: SeriesSearchData[];
+	sort_order: string;
+}
+
 export const getSeriesSearch = (
 	params?: GetSeriesSearchParams,
 	options?: AxiosRequestConfig
-): Promise<AxiosResponse<SeriesSearchData>> => {
+): Promise<AxiosResponse<SeriesSearchResponse>> => {
 	return axios.get(`/fred/series/search`, {
 		...options,
 		params: { ...params, ...options?.params },

@@ -15,11 +15,10 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo } from "react";
 import styled from "styled-components";
-import "./Board.scss";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import BoardContext from "./context";
-import { initialEdges, initialNodes } from "./init-nodes";
-import { nodeTypes } from "./nodeTypes";
-import { useIsMobile } from "./useIsMobile";
+import { initialEdges, initialNodes, initialNodesDefaults } from "./init-nodes";
+import { CHART_NODE, DATA_NODE, nodeTypes, type NodeType } from "./nodeTypes";
 
 const BoardContainer = styled.div`
 	height: 100vh;
@@ -32,8 +31,19 @@ function Board() {
 	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
 	const onReset = useCallback(() => {
-		setNodes(initialNodes);
-		setEdges(initialEdges);
+		setNodes(
+			initialNodes.map((node) => ({
+				...node,
+				id: `node-${+new Date()}`,
+			}))
+		);
+		setEdges(
+			initialEdges.map((edge) => ({
+				...edge,
+				id: `edge-${+new Date()}`,
+				data: {},
+			}))
+		);
 		fitView();
 	}, [setNodes, setEdges]);
 
@@ -54,7 +64,7 @@ function Board() {
 	}, [edges]);
 
 	const addNode = useCallback(
-		(type: string) => {
+		(type: NodeType) => {
 			setNodes((nds) => {
 				const nodesOfType = nds.filter((node) => node.type === type);
 				const maxYNode = nodesOfType.reduce((max, node) => {
@@ -64,6 +74,7 @@ function Board() {
 				return [
 					...nds,
 					{
+						...initialNodesDefaults[type],
 						id: `${type}-${nodesOfType.length + 1}`,
 						data: { isReady: false },
 						position: {
@@ -134,8 +145,16 @@ function Board() {
 						</Button>
 					</Panel>
 					<Panel position="top-left">
-						<Button onClick={() => addNode("chart")}>Add Chart</Button>
-						<Button onClick={() => addNode("data-category")}>
+						<Button
+							onClick={() => addNode(CHART_NODE)}
+							data-testid="add-chart-btn"
+						>
+							Add Chart
+						</Button>
+						<Button
+							onClick={() => addNode(DATA_NODE)}
+							data-testid="add-data-btn"
+						>
 							Add Data Category
 						</Button>
 					</Panel>

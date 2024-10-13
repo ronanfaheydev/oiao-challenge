@@ -1,8 +1,25 @@
 import type { Edge, Node } from "@xyflow/react";
+import { CHART_NODE, DATA_NODE, type NodeType } from "./nodeTypes";
+
+export const initialNodesDefaults: Record<NodeType, any> = {
+	[CHART_NODE]: {
+		type: CHART_NODE,
+		data: {
+			chartType: "line",
+			title: "Connect a data category to begin",
+		},
+		height: 400,
+		width: 800,
+	},
+	[DATA_NODE]: {
+		type: DATA_NODE,
+		data: {},
+	},
+};
 
 export const initialNodes: Node[] = [
 	{
-		type: "chart",
+		type: CHART_NODE,
 		id: "chart-1",
 		data: {
 			chartType: "line",
@@ -13,17 +30,11 @@ export const initialNodes: Node[] = [
 		width: 800,
 	},
 	{
-		type: "data-category",
-		id: "data-category-1",
+		type: DATA_NODE,
+		id: "data-node-1",
 		data: {},
 		position: { x: 50, y: 10 },
 	},
 ];
 
-export const initialEdges: Edge[] = [
-	// {
-	// 	id: "edge-1",
-	// 	source: "data-category-1",
-	// 	target: "chart-1",
-	// },
-];
+export const initialEdges: Edge[] = [];

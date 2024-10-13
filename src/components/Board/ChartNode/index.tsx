@@ -11,34 +11,36 @@ import { useGetSeriesObservationsMulti } from "../../../queries";
 import ErrorBoundary from "../../ErrorBoundary";
 import { Chart, type ChartSeries, type DateRange } from "./Chart";
 import { chartHeaderHeight, chartHeight, chartWidth } from "./constants";
+import { formatObservationDate, getColor } from "./helpers";
+import { ResizeIcon } from "./ResizeIcon";
 
-function ResizeIcon() {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="20"
-			height="20"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="#ff0071"
-			fill="none"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			style={{ position: "absolute", right: 5, bottom: 5 }}
-		>
-			<path stroke="none" d="M0 0h24v24H0z" fill="none" />
-			<polyline points="16 20 20 20 20 16" />
-			<line x1="14" y1="14" x2="20" y2="20" />
-			<polyline points="8 4 4 4 4 8" />
-			<line x1="4" y1="4" x2="10" y2="10" />
-		</svg>
-	);
+interface ChartNodeProps {
+	id: string;
+	selected?: boolean;
+	width: number;
+	height: number;
 }
 
-const formatObservationDate = (date: number) => {
-	// yyyy-mm-dd
-	return new Date(date).toISOString().split("T")[0];
-};
+interface NodeData extends Node {
+	data: {
+		series: {
+			id: string;
+			title: string;
+			units_short: string;
+		};
+	};
+}
+
+interface SeriesDataObservations {
+	data: {
+		observations: {
+			date: string;
+			value: number;
+		}[];
+	};
+	isLoading: boolean;
+	error: Error;
+}
 
 const controlStyle = {
 	background: "transparent",
@@ -63,64 +65,23 @@ const ChartNodeContainer = styled.div<{
 	min-height: ${chartHeight + chartHeaderHeight}px;
 `;
 
-const StyledHandle = styled(Handle)<{ hasConnection: boolean }>`
-	background-color: ${({ hasConnection }) =>
-		hasConnection ? "green" : "white"};
+const StyledHandle = styled(Handle)<{ $hasConnection: boolean }>`
+	background-color: ${({ $hasConnection }) =>
+		$hasConnection ? "green" : "white"};
 	border: 2px solid
-		${({ hasConnection }) => (hasConnection ? "green" : "lightgray")};
+		${({ $hasConnection }) => ($hasConnection ? "green" : "lightgray")};
 	border-radius: 5px;
-	width: 10px;
-	height: 20px;
-	margin: auto;
 	z-index: 110000;
-`;
 
-// generate hex colors from the series id
-const generateColor = (series_id: string) => {
-	const color = `${series_id}666666`
-		.split("")
-		.map((char) => char.charCodeAt(0))
-		.reduce((acc, charCode) => acc + charCode, 0);
+	height: 50px;
+	width: 20px;
+	margin-left: -5px;
 
-	return `#${color.toString(16).slice(0, 6)}`;
-};
-
-const colorMap: { [key: string]: string } = {};
-
-const getColor = (series_id: string) => {
-	if (colorMap[series_id]) {
-		return colorMap[series_id];
+	@media (min-width: 768px) {
+		height: 50px;
+		width: 20px;
 	}
-	const color = generateColor(series_id);
-	colorMap[series_id] = color;
-	return color;
-};
-
-interface ChartNodeProps {
-	id: string;
-	selected: boolean;
-}
-
-interface NodeData extends Node {
-	data: {
-		series: {
-			id: string;
-			title: string;
-			units_short: string;
-		};
-	};
-}
-
-interface SeriesDataObservations {
-	data: {
-		observations: {
-			date: string;
-			value: number;
-		}[];
-	};
-	isLoading: boolean;
-	error: Error;
-}
+`;
 
 const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 	const { getEdges, getNode } = useReactFlow();
@@ -153,7 +114,7 @@ const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 				observation_end: formatObservationDate(searchDates.dateend),
 			}),
 		},
-		{ queries: { enabled: !!incomingNodes.length } }
+		{ queries: { enabled: !!incomingNodes.length } } as any
 	) as unknown as SeriesDataObservations[];
 
 	const formattedData: ChartSeries[] = useMemo(() => {
@@ -195,10 +156,10 @@ const ChartNode = ({ id, selected, width, height }: ChartNodeProps) => {
 			<StyledHandle
 				type="target"
 				position={Position.Left}
-				hasConnection={!!incomingNodes.length}
+				$hasConnection={!!incomingNodes.length}
 			/>
 			<ChartNodeContainer
-				$isSelected={selected}
+				$isSelected={!!selected}
 				data-testid="chart-node"
 				$height={height}
 				$width={width}

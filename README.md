@@ -48,3 +48,4 @@ Data is fetched with tanstack query
 - Thought about using zustand for node state, not necessary for this project I would say
 - I need to set up the API on an external server if I want to use on mobile to test
   - Using GCP
+- There are a few uses of `any` introduced. The created types from the generator were difficult to get working

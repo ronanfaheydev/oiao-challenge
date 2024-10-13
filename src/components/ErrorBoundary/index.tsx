@@ -22,9 +22,14 @@ const ErrorBoundary = class ErrorBoundary extends React.Component<ErrorBoundaryP
 		if (this.state.hasError) {
 			return (
 				<Card>
-					<CardContent>{this.props.message}</CardContent>
+					<CardContent data-testid="error-message">
+						{this.props.message}
+					</CardContent>
 					<CardActions>
-						<Button onClick={() => this.setState({ hasError: false })}>
+						<Button
+							onClick={() => this.setState({ hasError: false })}
+							data-testid="error-reset"
+						>
 							Try again
 						</Button>
 					</CardActions>
