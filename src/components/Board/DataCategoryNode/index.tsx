@@ -1,20 +1,42 @@
 import { Clear } from "@mui/icons-material";
-import { Autocomplete, Button, TextField } from "@mui/material";
+import {
+	Autocomplete,
+	Button,
+	Card,
+	CardContent,
+	CardHeader,
+	CircularProgress,
+	FormHelperText,
+	InputLabel,
+	TextField,
+	Typography,
+} from "@mui/material";
 import { Handle, Position } from "@xyflow/react";
 import { useCallback, useContext, useState } from "react";
 import styled from "styled-components";
 import { useGetSeriesSearch, type SeriesSearchData } from "../../../queries";
+import ErrorBoundary from "../../ErrorBoundary";
 import BoardContext from "../context";
 
-const DataCategoryNodeContainer = styled.div`
-	background-color: #fff;
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
-	padding: 1em;
+const StyledCard = styled(Card)`
+	min-width: 320px;
+	overflow: visible;
+	.Mui-CardHeader-root {
+		max-width: 300px;
+	}
+	.MuiCardContent-root {
+		overflow: visible;
+	}
+	.MuiTypography-body1 {
+		max-width: 300px;
+	}
 `;
 
-function DataNode({ data, id, ...rest }) {
+interface DataSourceNodeProps {
+	id: string;
+}
+
+function DataSourceNode({ id }: DataSourceNodeProps) {
 	const [selectedSeries, setSelectedSeries] = useState<SeriesSearchData | null>(
 		null
 	);
@@ -23,7 +45,8 @@ function DataNode({ data, id, ...rest }) {
 	const {
 		data: seriesSearch,
 		isLoading: seriesLoading,
-		isError: seriesError,
+		isFetched: seriesSearchFetched,
+		error: seriesSearchError,
 	} = useGetSeriesSearch(
 		{
 			search_text: searchText,
@@ -43,53 +66,84 @@ function DataNode({ data, id, ...rest }) {
 		[id, updateNode]
 	);
 
+	const onCardClear = useCallback(() => {
+		setSelectedSeries(null);
+		updateNode(id, { series: null, isReady: false });
+	}, [id, updateNode]);
+
+	if (seriesSearchError) {
+		throw seriesSearchError;
+	}
+
 	return (
 		<>
 			{selectedSeries && <Handle type="source" position={Position.Right} />}
-			<DataCategoryNodeContainer>
-				{selectedSeries ? (
-					<div>
-						<Button
-							variant="outlined"
-							onClick={() => {
-								setSelectedSeries(null);
-								updateNode(id, { series: null, isReady: false });
-							}}
-						>
-							<Clear />
-						</Button>
-						<h3>{selectedSeries.title}</h3>
-						<p>{selectedSeries.frequency}</p>
-						<p>{selectedSeries.id}</p>
-					</div>
-				) : (
-					<>
-						<Autocomplete
-							freeSolo
-							style={{ width: 300 }}
-							options={seriesSearch?.seriess || []}
-							getOptionLabel={(option: any) =>
-								`${option.title} (${option.units_short}) - ${option.id}`
-							}
-							isOptionEqualToValue={(option, value) => option.id === value.id}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									placeholder="Search for a data series"
-									onChange={(evt) => {
-										setSearchText(evt.target.value);
-									}}
-								/>
-							)}
-							onChange={(evt, value) => {
-								onChange(value);
-							}}
-						/>
-					</>
-				)}
-			</DataCategoryNodeContainer>
+			<StyledCard>
+				<CardHeader
+					title={selectedSeries ? <>{selectedSeries.id}</> : "New data source"}
+					action={
+						selectedSeries ? (
+							<Button variant="outlined" color="error" onClick={onCardClear}>
+								<Clear />
+							</Button>
+						) : seriesLoading ? (
+							<CircularProgress color="inherit" size={20} />
+						) : null
+					}
+				/>
+				<CardContent>
+					{selectedSeries ? (
+						<div>
+							<Typography component="p">{selectedSeries.title}</Typography>
+							<p>{selectedSeries.frequency}</p>
+						</div>
+					) : (
+						<>
+							<Autocomplete
+								freeSolo
+								options={seriesSearch?.seriess || []}
+								getOptionLabel={(option: any) =>
+									`${option.title} (${option.units_short}) - ${option.id}`
+								}
+								isOptionEqualToValue={(option, value) => option.id === value.id}
+								renderInput={(params) => (
+									<>
+										<InputLabel htmlFor={`${id}-search`}>
+											{seriesSearchFetched
+												? `Search for a data series (${seriesSearch?.count} results)`
+												: "Search for a data series"}
+										</InputLabel>
+										<TextField
+											variant="outlined"
+											{...params}
+											id={`${id}-search`}
+											placeholder="e.g. CPI or GDP..."
+											onChange={(evt) => {
+												setSearchText(evt.target.value);
+											}}
+											type="outlined"
+										/>
+										<FormHelperText>
+											Search for a data series by name or ID
+										</FormHelperText>
+									</>
+								)}
+								onChange={(evt, value) => {
+									onChange(value);
+								}}
+							/>
+						</>
+					)}
+				</CardContent>
+			</StyledCard>
 		</>
 	);
 }
 
-export default DataNode;
+export default (props: DataSourceNodeProps) => {
+	return (
+		<ErrorBoundary type="DataSource" message="Error loading data source">
+			<DataSourceNode {...props} />
+		</ErrorBoundary>
+	);
+};

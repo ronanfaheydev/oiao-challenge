@@ -217,7 +217,7 @@ export const useGetSeriesSearch = <
 			Awaited<ReturnType<typeof getSeriesSearch>>,
 			TError,
 			TData
-		>;
+		> & { enabled?: boolean };
 		axios?: AxiosRequestConfig;
 	}
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
@@ -294,7 +294,7 @@ export const useGetSeriesObservations = <
 			Awaited<ReturnType<typeof getSeriesObservations>>,
 			TError,
 			TData
-		>;
+		> & { enabled?: boolean };
 		axios?: AxiosRequestConfig;
 	}
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
@@ -376,10 +376,11 @@ export const useGetSeriesObservationsMulti = <
 		axios?: AxiosRequestConfig;
 	}
 ): (UseQueryResult<TData, TError> & { queryKey: QueryKey })[] => {
+	const { series_ids, ...restParams } = params || {};
 	const queriesOptions: any = {
-		queries: params?.series_ids?.map((series_id) => {
+		queries: series_ids?.map((series_id) => {
 			const queryOptions = getGetSeriesObservationsQueryOptions(
-				{ series_id },
+				{ series_id, ...restParams },
 				options
 			);
 
