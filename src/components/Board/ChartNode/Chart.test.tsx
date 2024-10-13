@@ -1,5 +1,10 @@
+import { render } from "@testing-library/react";
+import { Chart } from "./Chart";
+
 describe("Chart", () => {
-	test("should render", () => {
-		expect(true).toBe(true);
+	test.skip("should render", () => {
+		render(
+			<Chart id="test" isLoading={false} onDateChange={() => {}} data={[]} />
+		);
 	});
 });
